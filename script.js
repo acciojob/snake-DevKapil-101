@@ -3,78 +3,92 @@ document.addEventListener("DOMContentLoaded", () => {
   const scoreElement = document.getElementById("score");
 
   let score = 0;
-  let snakeX = 1;
-  let snakeY = 20;
-  let foodX = 10;
-  let foodY = 10;
+  let snake = [{ x: 1, y: 20 }];
+  let food = { x: 10, y: 10 };
   let direction = "right";
   let intervalId;
 
-  function renderSnake() {
-    const snakePixel = document.createElement("div");
-    snakePixel.className = "snakeBodyPixel";
-    snakePixel.style.left = `${snakeX * 40}px`;
-    snakePixel.style.top = `${snakeY * 40}px`;
-    gameContainer.appendChild(snakePixel);
-  }
+  function renderGame() {
+    gameContainer.innerHTML = "";
+    snake.forEach((segment) => {
+      const snakePixel = document.createElement("div");
+      snakePixel.className = "snakeBodyPixel";
+      snakePixel.id = `pixel${segment.y * 20 + segment.x}`;
+      gameContainer.appendChild(snakePixel);
+    });
 
-  function renderFood() {
     const foodPixel = document.createElement("div");
     foodPixel.className = "food";
-    foodPixel.style.left = `${foodX * 40}px`;
-    foodPixel.style.top = `${foodY * 40}px`;
+    foodPixel.id = `pixel${food.y * 20 + food.x}`;
     gameContainer.appendChild(foodPixel);
   }
 
-  function removeSnake() {
-    const snakePixels = document.querySelectorAll(".snakeBodyPixel");
-    snakePixels.forEach((pixel) => pixel.remove());
-  }
-
-  function removeFood() {
-    const foodPixel = document.querySelector(".food");
-    foodPixel.remove();
-  }
-
   function moveSnake() {
-    removeSnake();
+    const head = snake[0];
+    let newHead;
     switch (direction) {
       case "right":
-        snakeX++;
+        newHead = { x: head.x + 1, y: head.y };
         break;
       case "left":
-        snakeX--;
+        newHead = { x: head.x - 1, y: head.y };
         break;
       case "up":
-        snakeY--;
+        newHead = { x: head.x, y: head.y - 1 };
         break;
       case "down":
-        snakeY++;
+        newHead = { x: head.x, y: head.y + 1 };
         break;
     }
+
+    snake.unshift(newHead);
+    if (newHead.x === food.x && newHead.y === food.y) {
+      score++;
+      scoreElement.textContent = score;
+      spawnFood();
+    } else {
+      snake.pop();
+    }
+
     checkCollision();
-    renderSnake();
+    renderGame();
   }
 
   function checkCollision() {
-    if (snakeX === foodX && snakeY === foodY) {
-      score++;
-      scoreElement.textContent = score;
-      removeFood();
-      spawnFood();
+    const head = snake[0];
+    // Check collision with the walls
+    if (head.x < 1 || head.x > 20 || head.y < 1 || head.y > 20) {
+      gameOver();
+    }
+    // Check collision with the snake body
+    for (let i = 1; i < snake.length; i++) {
+      if (head.x === snake[i].x && head.y === snake[i].y) {
+        gameOver();
+      }
     }
   }
 
   function spawnFood() {
-    foodX = Math.floor(Math.random() * 10);
-    foodY = Math.floor(Math.random() * 10);
-    renderFood();
+    food.x = Math.floor(Math.random() * 20) + 1;
+    food.y = Math.floor(Math.random() * 20) + 1;
   }
 
   function startGame() {
     spawnFood();
-    renderSnake();
     intervalId = setInterval(moveSnake, 100);
+  }
+
+  function gameOver() {
+    clearInterval(intervalId);
+    alert("Game Over! Your score: " + score);
+    resetGame();
+  }
+
+  function resetGame() {
+    score = 0;
+    snake = [{ x: 1, y: 20 }];
+    direction = "right";
+    startGame();
   }
 
   startGame();
